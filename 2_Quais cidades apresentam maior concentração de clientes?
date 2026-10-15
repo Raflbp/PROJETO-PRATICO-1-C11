@@ -1,0 +1,44 @@
+#2) Quais cidades apresentam maior concentração de clientes?
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Carregando o dataset
+customers = pd.read_csv('olist_customers_dataset.csv', delimiter=',')
+
+# Agrupando a quantidade de clientes únicos por cidade
+clientes_cidade = customers.groupby('customer_city')['customer_unique_id'].nunique().reset_index()
+
+# Renomeando a coluna
+clientes_cidade.columns = ['Cidade','Quantidade_Clientes']
+
+# Ordenando da maior quantidade para a menor
+clientes_cidade = clientes_cidade.sort_values(by='Quantidade_Clientes',ascending=False)
+
+# Pegando as 10 cidades com maior concentração de clientes
+top10_cidades = clientes_cidade.head(10)
+
+print(top10_cidades)
+
+# Criando a regra de cores
+cores = np.where(top10_cidades['Quantidade_Clientes'] > 5000,'green',np.where(top10_cidades['Quantidade_Clientes'] < 1500,'red','blue'))
+
+# Criando o gráfico
+plt.figure(figsize=(12, 6))
+
+plt.bar(0, 0, color='green', label='Acima de 5.000 clientes')
+plt.bar(0, 0, color='blue', label='Entre 1.500 e 5.000 clientes')
+plt.bar(0, 0, color='red', label='Abaixo de 1.500 clientes')
+
+plt.legend(title='Quantidade de Clientes')
+
+plt.bar(top10_cidades['Cidade'], top10_cidades['Quantidade_Clientes'], color=cores)
+
+plt.title('10 Cidades com Maior Concentração de Clientes')
+plt.xlabel('Cidade')
+plt.ylabel('Quantidade de Clientes Únicos')
+
+plt.xticks(rotation=45)
+
+plt.show()
