@@ -1,0 +1,45 @@
+#1) Como o atraso na entrega influencia a satisfação dos clientes?
+
+#Importando as bibliotecas necessárias
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+#Importando os datasets
+#Dataset com pedidos, status e datas de entrega
+pedidos = pd.read_csv("olist_orders_dataset.csv")
+
+#Dataset com avaliações das compras
+avaliacoes = pd.read_csv("olist_order_reviews_dataset.csv")
+
+#Convertendo as colunas de data p/ realizar operações
+pedidos["order_delivered_customer_date"] = pd.to_datetime(pedidos["order_delivered_customer_date"])
+pedidos["order_estimated_delivery_date"] = pd.to_datetime(pedidos["order_estimated_delivery_date"])
+ 
+#Filtrar somente os pedidos que foram entregues
+pedidos = pedidos[pedidos["order_status"] == "delivered"]
+pedidos = pedidos.dropna(subset=["order_delivered_customer_date"])
+ 
+#Calcular o atraso da entrega em dias
+pedidos["atraso"] = (pedidos["order_delivered_customer_date"] - pedidos["order_estimated_delivery_date"]).dt.days
+ 
+#Juntar os pedidos com as avaliações
+dados = pedidos.merge(avaliacoes, on="order_id")
+ 
+#Filtrar as entregas no prazo e atrasadas
+dados["situacao"] = "No prazo"
+dados.loc[dados["atraso"] > 0, "situacao"] = "Atrasado"
+ 
+#Gerar o gráfico de barras
+sns.barplot(data=dados, 
+            x="situacao", 
+            y="review_score",
+            order=["No prazo", "Atrasado"],
+            hue="situacao", 
+            palette={"No prazo": "green", "Atrasado": "red"})
+
+#Renomeando o gráfico
+plt.title("Nota média: pedidos no prazo x atrasados")
+plt.xlabel("")
+plt.ylabel("Nota média")
+plt.show()
