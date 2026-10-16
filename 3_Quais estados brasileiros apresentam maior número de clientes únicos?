@@ -1,0 +1,41 @@
+#3) Quais estados brasileiros apresentam maior número de clientes únicos?
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Carregando o dataset
+customers = pd.read_csv('olist_customers_dataset.csv', delimiter=',')
+
+# Agrupando a quantidade de clientes únicos por estado
+clientes_estado = customers.groupby('customer_state')['customer_unique_id'].nunique().reset_index()
+
+# Renomeando as colunas
+clientes_estado.columns = ['Estado','Quantidade_Clientes']
+
+# Ordenando do maior para o menor
+clientes_estado = clientes_estado.sort_values(by='Quantidade_Clientes',ascending=False)
+
+print(clientes_estado)
+
+# Criando regra de cores
+cores = np.where(clientes_estado['Quantidade_Clientes'] > 10000, 'green',
+    np.where(clientes_estado['Quantidade_Clientes'] < 2000,'red','blue')
+)
+
+# Criando o gráfico
+plt.figure(figsize=(12, 6))
+
+plt.bar(0, 0, color='green', label='Acima de 10.000 clientes')
+plt.bar(0, 0, color='blue', label='Entre 2.000 e 10.000 clientes')
+plt.bar(0, 0, color='red', label='Abaixo de 2.000 clientes')
+
+plt.legend(title='Quantidade de Clientes')
+
+plt.bar(clientes_estado['Estado'], clientes_estado['Quantidade_Clientes'], color=cores)
+
+plt.title('Quantidade de Clientes Únicos por Estado')
+plt.xlabel('Estado')
+plt.ylabel('Quantidade de Clientes Únicos')
+
+plt.show()
