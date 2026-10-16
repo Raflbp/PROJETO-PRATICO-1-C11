@@ -1,0 +1,41 @@
+#Importando as bibliotecas necessárias
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+#Importando o dataset referente aos pagamentos
+pagamentos = pd.read_csv("olist_order_payments_dataset.csv")
+
+#Tirando os pagamentos que não foram definidos
+pagamentos = pagamentos[pagamentos["payment_type"] != "not_defined"]
+
+#7) Quais formas de pagamento estão associadas a compras de maior valor?
+
+#Somando o valor pago por pedido em cada forma de pagamento
+compras = pagamentos.groupby(["order_id", "payment_type"], as_index=False)["payment_value"].sum()
+
+#Calculando o valor médio das compras de cada forma de pagamento
+media = compras.groupby("payment_type")["payment_value"].mean().sort_values(ascending=False)
+print(media)
+
+#Traduzindo os noomes para português
+nomes = {
+    "credit_card": "Cartão de crédito",
+    "boleto": "Boleto",
+    "debit_card": "Cartão de débito",
+    "voucher": "Voucher",
+}
+compras["payment_type"] = compras["payment_type"].map(nomes)
+ordem = [nomes[tipo] for tipo in media.index]
+
+#Gerando o gráfico
+sns.boxplot(data=compras, 
+            x="payment_type", 
+            y="payment_value",
+            showfliers=False, 
+            color="steelblue")
+ 
+plt.title("Distribuição do valor da compra por forma de pagamento")
+plt.xlabel("")
+plt.ylabel("Valor da compra (R$)")
+plt.show()
