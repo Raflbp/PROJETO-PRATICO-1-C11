@@ -1,0 +1,54 @@
+# 10) Quais categorias de produtos apresentam as maiores taxas de pedidos cancelados ou não entregues, e qual o impacto no faturamento perdido?
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Carregando os datasets
+orders = pd.read_csv('datasets\\olist_orders_dataset.csv', delimiter=',')
+order_items = pd.read_csv('datasets\\olist_order_items_dataset.csv', delimiter=',')
+products = pd.read_csv('datasets\\olist_products_dataset.csv', delimiter=',')
+
+# Primeiro juntamos pedidos e itens para ter o status e o preço
+orders_items = pd.merge(orders[['order_id', 'order_status']], order_items[['order_id', 'product_id', 'price']], on='order_id', how='inner')
+
+# Depois juntamos com os produtos para obter a categoria
+df_complete = pd.merge(orders_items, products[['product_id', 'product_category_name']], on='product_id', how='inner')
+
+# Filtrando apenas os pedidos que não deram certo (Cancelados ou Indisponíveis)
+pedidos_nao_entregues = df_complete[df_complete['order_status'].isin(['canceled', 'unavailable'])]
+
+#  Agrupando por categoria para calcular o volume de itens e o faturamento perdido
+analise_cancelamentos = pedidos_nao_entregues.groupby('product_category_name').agg(
+    qtd_cancelada=('order_id', 'count'),
+    faturamento_perdido=('price', 'sum')
+).reset_index()
+
+#  Ordenando pelo maior impacto financeiro e pegando o Top 10
+top_10_cancelamentos = analise_cancelamentos.sort_values(by='faturamento_perdido', ascending=False).head(10)
+
+# Exibindo a tabela de resultados no terminal
+print(" Top 10 categorias que mais tiveram canselamentos ou indisponíveis: ")
+print(top_10_cancelamentos.to_string(index=False))
+
+# Visualização: Gráfico de Barras Horizontais (ideal para nomes longos de categorias)
+plt.figure(figsize=(12, 7))
+
+# Ordenando grafico
+top_10_grafico = top_10_cancelamentos.sort_values(by='faturamento_perdido', ascending=True)
+
+# Criando as barras com uma cor de 
+barras = plt.barh(top_10_grafico['product_category_name'], top_10_grafico['faturamento_perdido'], color='red', alpha=0.8)
+
+# Personalizando o visual
+plt.title('Top 10 Categorias com Maior Faturamento Perdido (Cancelamentos/Indisponíveis)', fontsize=14, fontweight='bold')
+plt.xlabel('Faturamento Perdido (R$)', fontsize=12)
+plt.ylabel('Categoria do Produto', fontsize=12)
+plt.grid(axis='x', linestyle='--', alpha=0.7)
+
+# Adicionando os valores formatados em R$ na ponta de cada barra
+for barra in barras:
+    xval = barra.get_width()
+    plt.text(xval + (xval * 0.01), barra.get_y() + barra.get_height()/2, f'R$ {xval:,.2f}', va='center', fontsize=10, fontweight='bold')
+
+plt.tight_layout()
+plt.show()
