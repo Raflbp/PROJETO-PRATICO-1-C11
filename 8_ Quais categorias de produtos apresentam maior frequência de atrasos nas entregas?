@@ -1,0 +1,54 @@
+#8) Quais categorias de produtos apresentam maior frequência de atrasos nas entregas?
+
+#Importando as bibliotecas necessárias
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+#Importando os datasets necessários
+pedidos = pd.read_csv("olist_orders_dataset.csv")
+itens = pd.read_csv("olist_order_items_dataset.csv")
+produtos = pd.read_csv("olist_products_dataset.csv")
+traducao = pd.read_csv("product_category_name_translation.csv")
+
+#Convertendo as colunas de datas
+pedidos["order_delivered_customer_date"] = pd.to_datetime(pedidos["order_delivered_customer_date"])
+pedidos["order_estimated_delivery_date"] = pd.to_datetime(pedidos["order_estimated_delivery_date"])
+
+#Filtrando somente os pedidos entregues
+pedidos = pedidos[pedidos["order_status"] == "delivered"]
+pedidos = pedidos.dropna(subset=["order_delivered_customer_date"])
+
+#Verificando se o pedido atrasou na entrega
+pedidos["atrasou"] = pedidos["order_delivered_customer_date"] > pedidos["order_estimated_delivery_date"]
+
+#Juntas pedido - item - produto - categoria em inglês
+dados = itens[["order_id", "product_id"]].merge(produtos[["product_id", "product_category_name"]], on="product_id")
+dados = dados.merge(traducao, on="product_category_name")
+dados = dados.merge(pedidos[["order_id", "atrasou"]], on="order_id")
+
+#Contando os pedidos somente 1 vez por categoria
+dados = dados.drop_duplicates(subset=["order_id", "product_category_name_english"])
+
+#Calculando a % de atraso por categoria (com pelo menos 300 pedidos)
+resumo = dados.groupby("product_category_name_english")["atrasou"].agg(["mean", "count"])
+resumo = resumo[resumo["count"] >= 300]
+resumo["pct_atraso"] = resumo["mean"] * 100
+top10 = resumo.sort_values("pct_atraso", ascending=False).head(10)
+print(top10)
+
+media_geral = pedidos["atrasou"].mean() * 100
+
+#Gerando o gráfico de barras horizontais
+grafico = sns.barplot(data=top10.reset_index(), y="product_category_name_english", x="pct_atraso",
+                      color="tomato")
+
+for barras in grafico.containers:
+    grafico.bar_label(barras, fmt="%.1f%%")
+
+plt.axvline(media_geral, color="black", linestyle="--", label=f"Média geral: {media_geral:.1f}%")
+plt.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15))
+plt.title("Categorias com maior % de pedidos atrasados")
+plt.xlabel("% de pedidos atrasados")
+plt.ylabel("")
+plt.show()
