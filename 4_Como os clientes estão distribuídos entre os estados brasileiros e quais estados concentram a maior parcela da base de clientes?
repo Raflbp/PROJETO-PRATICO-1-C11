@@ -1,0 +1,49 @@
+#4) Como os clientes estão distribuídos entre os estados brasileiros e quais estados concentram a maior parcela da base de clientes?
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Carregando o dataset
+customers = pd.read_csv('olist_customers_dataset.csv', delimiter=',')
+
+# Calculando o total de clientes únicos
+total_clientes = customers['customer_unique_id'].nunique()
+
+print('Total de clientes únicos:', total_clientes)
+
+# Agrupando clientes únicos por estado
+distribuicao_estado = customers.groupby('customer_state')['customer_unique_id'].nunique().reset_index()
+
+# Renomeando colunas
+distribuicao_estado.columns = ['Estado','Quantidade_Clientes']
+
+# Calculando a porcentagem de clientes de cada estado
+distribuicao_estado['Porcentagem'] = (distribuicao_estado['Quantidade_Clientes']/ total_clientes) * 100
+
+# Ordenando do maior para o menor
+distribuicao_estado = distribuicao_estado.sort_values(by='Porcentagem',ascending=False)
+
+print(distribuicao_estado)
+
+# Criando regra de cores
+cores = np.where(distribuicao_estado['Porcentagem'] >= 10,'green',
+    np.where(distribuicao_estado['Porcentagem'] < 2,'red','blue')
+)
+
+# Criando o gráfico
+plt.figure(figsize=(12, 6))
+
+plt.bar(0, 0, color='green', label='10% ou mais')
+plt.bar(0, 0, color='blue', label='Entre 2% e 10%')
+plt.bar(0, 0, color='red', label='Abaixo de 2%')
+
+plt.legend(title='Participação na Base')
+
+plt.bar(distribuicao_estado['Estado'],distribuicao_estado['Porcentagem'],color=cores)
+
+plt.title('Distribuição Percentual dos Clientes por Estado')
+plt.xlabel('Estado')
+plt.ylabel('Porcentagem de Clientes (%)')
+
+plt.show()
